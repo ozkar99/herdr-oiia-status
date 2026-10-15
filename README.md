@@ -120,18 +120,6 @@ Copy `config.example.toml` to `$(herdr plugin config-dir oiia.status)/config.tom
 You can change the frames, fps, the glyphs for other states, and the sound mode
 (`once`, `loop` for the full oiiaoiia experience, or `off`).
 
-## Credits
-
-The bundled OIIA cat media are copies of the viral meme, included for fun:
-
-- `assets/oiia.gif`: the green-screen spinning cat, from
-  [Tenor](https://tenor.com/view/meme-uiia-gif-2363911505930596945)
-- `assets/oiia.mp3`: the "OIIAIOIIIAI cat" clip, from
-  [myinstants](https://www.myinstants.com/en/instant/oiiaioiiiai-cat-57035/)
-
-All rights to the original cat video and audio belong to their creators. If
-you own them and want them removed, open an issue.
-
 ## Uninstall
 
 ```bash
