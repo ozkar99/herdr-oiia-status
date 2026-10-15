@@ -1,8 +1,8 @@
 //! Builds a color bitmap font whose glyphs are the frames of the OIIA GIF.
 //!
 //! Herdr's sidebar is text, but the terminal decides how each character looks.
-//! Mapping a few private-use code points to this font (kitty `symbol_map`,
-//! Ghostty `font-codepoint-map`) turns them into the actual cat.
+//! Mapping a few private-use code points to this font (Ghostty
+//! `font-codepoint-map`) turns them into the actual cat.
 //!
 //! Linux (FreeType) reads Google's CBDT/CBLC color bitmaps, the format of Noto
 //! Color Emoji; macOS (CoreText) only reads Apple's `sbix`. Each platform gets

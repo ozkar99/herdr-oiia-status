@@ -27,7 +27,7 @@ pub struct Config {
     /// Re-run `install-font` after changing it.
     pub font_grid: [u32; 2],
     /// Put the cat in herdr's sidebar layout and install the cat font for
-    /// kitty/Ghostty automatically. Off: do both yourself (see the README).
+    /// Ghostty automatically. Off: do both yourself (see the README).
     pub auto_setup: bool,
     pub sound: SoundConfig,
 }
@@ -41,21 +41,9 @@ pub struct StateGlyphs {
     pub unknown: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum SoundMode {
-    /// Never play anything.
-    Off,
-    /// Play once each time an agent starts working.
-    Once,
-    /// Loop for as long as any agent is working.
-    Loop,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SoundConfig {
-    pub mode: SoundMode,
     /// Audio file; relative paths resolve against the config dir, then the
     /// plugin's bundled `assets/`.
     pub file: PathBuf,
@@ -95,7 +83,6 @@ impl Default for StateGlyphs {
 impl Default for SoundConfig {
     fn default() -> Self {
         Self {
-            mode: SoundMode::Once,
             file: "oiia.mp3".into(),
             player: Vec::new(),
         }

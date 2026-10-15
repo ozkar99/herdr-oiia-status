@@ -44,7 +44,7 @@ command = ["target/release/herdr-oiia-status", "pane"]
 
 [[actions]]
 id = "install-font"
-title = "OIIA: install the cat font (real GIF in the sidebar, kitty/Ghostty)"
+title = "OIIA: install the cat font (real GIF in the sidebar, Ghostty)"
 contexts = ["workspace"]
 command = ["target/release/herdr-oiia-status", "install-font"]
 

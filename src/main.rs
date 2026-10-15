@@ -14,7 +14,6 @@ mod clients;
 mod config;
 mod font;
 mod herdr;
-mod kitty;
 mod managed;
 mod rhythm;
 mod setup;
@@ -28,7 +27,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::{Duration, Instant};
 
-use config::{Config, SoundMode};
+use config::Config;
 use herdr::{Client, Status};
 use sound::Player;
 
@@ -114,7 +113,7 @@ impl Env {
     }
 
     fn player(&self, config: &Config, files: &[PathBuf]) -> Option<Player> {
-        if config.sound.mode == SoundMode::Off || files.is_empty() {
+        if files.is_empty() {
             return None;
         }
         let player = Player::new(files, &config.sound.player);
@@ -249,15 +248,13 @@ struct Animator<'a> {
     statuses: HashMap<String, Status>,
     /// Last static glyph reported per non-working pane.
     shown: HashMap<String, String>,
-    /// Every attached client is in kitty or Ghostty, so font frames render.
+    /// Every attached client is in Ghostty, so font frames render.
     use_font: bool,
     last_client_check: Option<Instant>,
     /// Some agent was working on the previous tick.
     was_working: bool,
     /// When work last started; the first take waits a little for the player.
     started_working: Instant,
-    /// `once` mode already played its sound since work started.
-    played_once: bool,
 }
 
 impl<'a> Animator<'a> {
@@ -275,7 +272,6 @@ impl<'a> Animator<'a> {
             last_client_check: None,
             was_working: false,
             started_working: Instant::now(),
-            played_once: false,
         }
     }
 
@@ -313,9 +309,7 @@ impl<'a> Animator<'a> {
             if working.is_empty() {
                 if self.was_working {
                     self.was_working = false;
-                    if let Some(player) = &mut self.player
-                        && self.config.sound.mode == SoundMode::Loop
-                    {
+                    if let Some(player) = &mut self.player {
                         player.stop();
                     }
                 }
@@ -333,7 +327,6 @@ impl<'a> Animator<'a> {
                 if !self.was_working {
                     self.was_working = true;
                     self.started_working = started;
-                    self.played_once = false;
                     self.show.restart();
                 }
                 // A take starts only once the player can start on cue
@@ -350,14 +343,7 @@ impl<'a> Animator<'a> {
                 if let Some(take) = start_sound
                     && let Some(player) = &mut self.player
                 {
-                    match self.config.sound.mode {
-                        SoundMode::Loop => player.restart(take),
-                        SoundMode::Once if !self.played_once => {
-                            player.restart(take);
-                            self.played_once = true;
-                        }
-                        _ => {}
-                    }
+                    player.restart(take);
                 }
                 let mut lines = frame.split('\n');
                 let tokens: Vec<(String, Option<&str>)> = self
@@ -477,8 +463,7 @@ fn preview(env: &Env, gif: Option<String>) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Play the GIF in the pane: real pixels through Kitty graphics when the
-/// terminal supports them, otherwise true-color half blocks with the braille
+/// Play the GIF in the pane as true-color half blocks, with the braille
 /// sidebar sizes underneath. Any key exits.
 fn pane(env: &Env, gif: Option<String>) -> std::io::Result<()> {
     use std::io::Write;
@@ -489,7 +474,6 @@ fn pane(env: &Env, gif: Option<String>) -> std::io::Result<()> {
     let area = cat::bounds(&frames);
 
     let _raw = term::RawMode::enable();
-    let graphics = kitty::supported();
     static QUIT: AtomicBool = AtomicBool::new(false);
     std::thread::spawn(|| {
         let mut byte = [0u8; 1];
@@ -499,59 +483,10 @@ fn pane(env: &Env, gif: Option<String>) -> std::io::Result<()> {
 
     let mut out = std::io::stdout().lock();
     write!(out, "\x1b[?1049h\x1b[?25l")?;
-    let result = if graphics {
-        pane_graphics(&mut out, &frames, area, &QUIT)
-    } else {
-        pane_text(&mut out, &frames, area, &QUIT)
-    };
+    let result = pane_text(&mut out, &frames, area, &QUIT);
     write!(out, "\x1b[?25h\x1b[?1049l")?;
     out.flush()?;
     result
-}
-
-fn pane_graphics(
-    out: &mut impl std::io::Write,
-    frames: &[cat::Frame],
-    area: (usize, usize, usize, usize),
-    quit: &std::sync::atomic::AtomicBool,
-) -> std::io::Result<()> {
-    const FIRST_ID: u32 = 0x0a1a_0000;
-    for (n, frame) in frames.iter().enumerate() {
-        let (width, height, rgba) = cat::rgba(frame, area, 320);
-        kitty::upload(out, FIRST_ID + n as u32, width, height, &rgba)?;
-    }
-    out.flush()?;
-
-    let aspect = (area.2 - area.0) as f32 / (area.3 - area.1) as f32;
-    let mut size = (0, 0);
-    let mut previous = None;
-    let mut i = 0;
-    while !quit.load(std::sync::atomic::Ordering::Relaxed) {
-        let (width, height) = term::size();
-        let rows = height.saturating_sub(2).max(2);
-        // Cells are about twice as tall as wide.
-        let cols = ((rows * 2) as f32 * aspect) as usize;
-        if (width, height) != size {
-            size = (width, height);
-            write!(out, "\x1b[2J\x1b[{height};1H\x1b[2mpress any key to close\x1b[0m")?;
-        }
-        let n = i % frames.len();
-        let id = FIRST_ID + n as u32;
-        // Place the new frame before hiding the old one so nothing blinks.
-        write!(out, "\x1b[1;{}H", width.saturating_sub(cols) / 2 + 1)?;
-        kitty::place(out, id, rows)?;
-        if let Some(old) = previous.filter(|&old| old != id) {
-            kitty::hide(out, old)?;
-        }
-        out.flush()?;
-        previous = Some(id);
-        std::thread::sleep(std::time::Duration::from_millis(u64::from(frames[n].delay_ms)));
-        i += 1;
-    }
-    for n in 0..frames.len() {
-        kitty::free(out, FIRST_ID + n as u32)?;
-    }
-    Ok(())
 }
 
 fn pane_text(
@@ -590,7 +525,7 @@ fn pane_text(
             }
             write!(out, "\x1b[0m\r\n")?;
         }
-        write!(out, "\x1b[2mpress any key to close (no Kitty graphics: text mode)\x1b[0m")?;
+        write!(out, "\x1b[2mpress any key to close\x1b[0m")?;
         out.flush()?;
         std::thread::sleep(std::time::Duration::from_millis(u64::from(frame.delay_ms)));
         i += 1;

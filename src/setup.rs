@@ -250,7 +250,7 @@ fn canonical_theme(name: &str) -> String {
 // ---- font -------------------------------------------------------------------
 
 /// Build the GIF font, install it for this user, and map its code points in
-/// kitty and Ghostty, which then draw the cat token as the real cat.
+/// Ghostty, which then draws the cat token as the real cat.
 pub fn install_font(env: &Env, config: &Config, gif: Option<PathBuf>) -> std::io::Result<Vec<String>> {
     let gif = gif.unwrap_or_else(|| env.gif());
     let frames = cat::load(&gif)?;
@@ -284,7 +284,7 @@ pub fn install_font(env: &Env, config: &Config, gif: Option<PathBuf>) -> std::io
     std::fs::write(state_dir.join(config::FONT_FRAMES_FILE), format!("{cols} {rows}\n{}\n", spin.len()))?;
     std::fs::write(state_dir.join(FONT_SIGNATURE_FILE), font_signature(&gif, config))?;
 
-    // Never signal a terminal to reload: older kitty exits on SIGUSR1.
+    // Never signal a terminal to reload its config; Ghostty picks it up on restart.
     let last = font::FIRST_CODEPOINT + images.len() as u32 - 1;
     notes.extend(terminals::configure(&home, font::FAMILY, font::FIRST_CODEPOINT, last)?);
     Ok(notes)

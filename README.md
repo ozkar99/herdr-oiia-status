@@ -50,26 +50,24 @@ herdr start), it sets itself up:
   If you already have your own `[ui.sidebar.agents]`, it leaves yours alone;
   add `$oiia` (and `$oiia2` for the cat's second row) to it yourself.
 - **Sound:** the OIIA clip is bundled and plays while agents work.
-- **Real GIF cat (kitty or Ghostty):** if either terminal is installed, it
-  builds a color font from the bundled GIF, installs it (`~/.local/share/fonts`
-  on Linux, `~/Library/Fonts` on macOS) and maps it in the terminal's config.
-  Restart the terminal once to load it. Other terminals show a text cat
-  instead, automatically.
+- **Real GIF cat (Ghostty):** if Ghostty is installed, it builds a color font
+  from the bundled GIF, installs it (`~/.local/share/fonts` on Linux,
+  `~/Library/Fonts` on macOS) and maps it in Ghostty's config. Restart Ghostty
+  once to load it. Other terminals show a text cat instead, automatically.
 
 Everything it writes into other configs sits between
 `# BEGIN oiia.status` / `# END oiia.status` markers. To manage it all
 yourself, set `auto_setup = false` in
 `$(herdr plugin config-dir oiia.status)/config.toml`.
 
-Tested on Linux with kitty. Ghostty and macOS are implemented but untested;
-reports welcome.
+Tested on Linux with Ghostty. macOS is implemented but not yet confirmed to
+render the font; reports welcome.
 
 To use your own media, drop an `oiia.mp3` and/or a green-screen `oiia.gif` into
 `$(herdr plugin config-dir oiia.status)/`; they take priority over the bundled
 ones (the font rebuilds automatically).
 
-To watch the full-size GIF in a popup (real pixels where the terminal supports
-Kitty graphics, colored half blocks elsewhere):
+To watch the GIF in a popup (colored half blocks):
 
 ```bash
 herdr plugin pane open --plugin oiia.status --entrypoint cat
@@ -78,8 +76,8 @@ herdr plugin pane open --plugin oiia.status --entrypoint cat
 ## Configure
 
 Copy `config.example.toml` to `$(herdr plugin config-dir oiia.status)/config.toml`.
-You can change the frames, fps, the glyphs for other states, and the sound mode
-(`once`, `loop` for the full oiiaoiia experience, or `off`).
+You can change the frames, fps, and the glyphs for other states. The sound
+always loops while an agent works.
 
 ## Uninstall
 

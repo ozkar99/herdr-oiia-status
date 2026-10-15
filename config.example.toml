@@ -9,7 +9,7 @@ token = "oiia"
 fps = 20
 
 # Text cat, used when the GIF font is not installed or a client is outside
-# kitty. Keep frames the same width; pad with "⠀" (U+2800), not spaces, because
+# Ghostty. Keep frames the same width; pad with "⠀" (U+2800), not spaces, because
 # herdr trims whitespace from token values. Setting this disables the font cat.
 # frames = ["ᓚᘏᗢ", "⠀ᗢ⠀", "ᗢᘏᓗ", "⠀ᘏ⠀"]
 
@@ -17,7 +17,7 @@ fps = 20
 # as $oiia2, $oiia3... The font and sidebar layout update automatically.
 font_grid = [4, 2]
 
-# Set up herdr's sidebar layout and the kitty/Ghostty font automatically.
+# Set up herdr's sidebar layout and the Ghostty font automatically.
 auto_setup = true
 
 # What the token shows for the other states (herdr's "symbols" shapes).
@@ -29,10 +29,6 @@ done = "✓"
 unknown = "·"
 
 [sound]
-# "once" = play the first take each time an agent starts working
-# "loop" = a new random take after every pause, for as long as any agent works
-# "off"
-mode = "once"
 # Relative paths are looked up in this config dir, then the plugin's sounds/ dir.
 file = "oiia.mp3"
 # Custom player; "{file}" becomes the audio path. Empty = auto-detect
