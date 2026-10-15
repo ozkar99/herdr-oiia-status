@@ -82,6 +82,21 @@ impl Env {
         }
     }
 
+    /// The cat GIF: the user's `oiia.gif` in the config dir, else the one
+    /// bundled in the plugin's `assets/`.
+    fn gif_or_none(&self) -> Option<PathBuf> {
+        [&self.config_dir, &self.plugin_root.as_ref().map(|root| root.join("assets"))]
+            .into_iter()
+            .flatten()
+            .map(|dir| dir.join("oiia.gif"))
+            .find(|path| path.is_file())
+    }
+
+    /// Like `gif_or_none`, falling back to a path that reports a clear error.
+    fn gif(&self) -> PathBuf {
+        self.gif_or_none().unwrap_or_else(|| PathBuf::from("oiia.gif"))
+    }
+
     fn sound_file(&self, config: &Config) -> Option<PathBuf> {
         let file = config
             .sound
@@ -175,9 +190,8 @@ fn build_show(env: &Env, config: &Config) -> (show::Show, Vec<PathBuf>) {
 
     // No clip: loop the GIF's stand/spin pattern, or just spin.
     let speeds = env
-        .config_dir
-        .as_ref()
-        .and_then(|dir| cat::load(&dir.join("oiia.gif")).ok())
+        .gif_or_none()
+        .and_then(|gif| cat::load(&gif).ok())
         .map(|frames| rhythm::from_gif(&cat::plan(&frames, tick_ms)))
         .unwrap_or_else(|| vec![1.0; 40]);
     let segments = vec![segment(&speeds, None)];
@@ -422,9 +436,7 @@ fn test_sound(env: &Env, config: &Config) -> std::io::Result<()> {
 
 /// Print the GIF as braille strips at sidebar sizes, plus a true-color render.
 fn preview(env: &Env, gif: Option<String>) -> std::io::Result<()> {
-    let path = gif.map(PathBuf::from).unwrap_or_else(|| {
-        env.config_dir.clone().unwrap_or_default().join("oiia.gif")
-    });
+    let path = gif.map(PathBuf::from).unwrap_or_else(|| env.gif());
     let frames = cat::load(&path)?;
     let area = cat::bounds(&frames);
     let total: u32 = frames.iter().map(|f| f.delay_ms).sum();
@@ -462,9 +474,7 @@ fn pane(env: &Env, gif: Option<String>) -> std::io::Result<()> {
     use std::io::Write;
     use std::sync::atomic::{AtomicBool, Ordering};
 
-    let path = gif.map(PathBuf::from).unwrap_or_else(|| {
-        env.config_dir.clone().unwrap_or_default().join("oiia.gif")
-    });
+    let path = gif.map(PathBuf::from).unwrap_or_else(|| env.gif());
     let frames = cat::load(&path)?;
     let area = cat::bounds(&frames);
 
@@ -622,9 +632,7 @@ mod term {
 /// Build the GIF font, install it for this user, and map its code points in
 /// kitty, which then draws the `$oiia` token as the real cat.
 fn install_font(env: &Env, config: &Config, gif: Option<String>) -> std::io::Result<()> {
-    let path = gif.map(PathBuf::from).unwrap_or_else(|| {
-        env.config_dir.clone().unwrap_or_default().join("oiia.gif")
-    });
+    let path = gif.map(PathBuf::from).unwrap_or_else(|| env.gif());
     let frames = cat::load(&path)?;
     let area = cat::bounds(&frames);
     // One glyph per terminal cell, so the terminal never has to squeeze or

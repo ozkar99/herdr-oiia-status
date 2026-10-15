@@ -42,7 +42,7 @@ right away. Working frames carry a 3 s TTL, so a crash never leaves a frozen cat
 Requires herdr ≥ 0.9.0, Linux or macOS, and `cargo`.
 
 ```bash
-herdr plugin install <owner>/herdr-oiia-status      # once it's on GitHub
+herdr plugin install ozkar99/herdr-oiia-status
 # or, from a local checkout:
 cargo build --release && herdr plugin link .
 ```
@@ -66,14 +66,16 @@ rows = [
 ]
 ```
 
-### 2. Add the sound
+### 2. Sound
 
-The meme audio isn't bundled. Drop your clip into the plugin config dir:
+The OIIA clip and GIF are bundled in `assets/`, so sound works out of the box:
 
 ```bash
-cp ~/Downloads/oiia.mp3 "$(herdr plugin config-dir oiia.status)/"
 herdr plugin action invoke oiia.status.test-sound
 ```
+
+To use your own, drop an `oiia.mp3` (or set `sound.file`) and/or an `oiia.gif`
+into `$(herdr plugin config-dir oiia.status)/`; those take priority.
 
 Sound plays through the first player found: `afplay`, `pw-play`, `paplay`,
 `ffplay`, `mpv`, `cvlc`, `play`, or `aplay`. On WSL with none of those, it plays
@@ -82,7 +84,8 @@ something else.
 
 ### 3. The real GIF in the sidebar (kitty or Ghostty)
 
-Put the green-screen OIIA GIF at `$(herdr plugin config-dir oiia.status)/oiia.gif`, then:
+Build the cat font from the bundled GIF (or your own green-screen GIF in the
+config dir):
 
 ```bash
 herdr plugin action invoke oiia.status.install-font
@@ -116,6 +119,18 @@ herdr plugin pane open --plugin oiia.status --entrypoint cat
 Copy `config.example.toml` to `$(herdr plugin config-dir oiia.status)/config.toml`.
 You can change the frames, fps, the glyphs for other states, and the sound mode
 (`once`, `loop` for the full oiiaoiia experience, or `off`).
+
+## Credits
+
+The bundled OIIA cat media are copies of the viral meme, included for fun:
+
+- `assets/oiia.gif`: the green-screen spinning cat, from
+  [Tenor](https://tenor.com/view/meme-uiia-gif-2363911505930596945)
+- `assets/oiia.mp3`: the "OIIAIOIIIAI cat" clip, from
+  [myinstants](https://www.myinstants.com/en/instant/oiiaioiiiai-cat-57035/)
+
+All rights to the original cat video and audio belong to their creators. If
+you own them and want them removed, open an issue.
 
 ## Uninstall
 

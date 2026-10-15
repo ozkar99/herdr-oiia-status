@@ -54,7 +54,7 @@ pub enum SoundMode {
 pub struct SoundConfig {
     pub mode: SoundMode,
     /// Audio file; relative paths resolve against the config dir, then the
-    /// plugin root.
+    /// plugin's bundled `assets/`.
     pub file: PathBuf,
     /// Custom player argv. `{file}` is replaced with the audio path. Empty means
     /// auto-detect.
@@ -127,7 +127,7 @@ impl SoundConfig {
         [config_dir, plugin_root]
             .into_iter()
             .flatten()
-            .flat_map(|dir| [dir.join(&self.file), dir.join("sounds").join(&self.file)])
+            .flat_map(|dir| [dir.join(&self.file), dir.join("assets").join(&self.file)])
             .find(|path| path.is_file())
     }
 }
