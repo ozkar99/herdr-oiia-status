@@ -10,7 +10,7 @@ use crate::herdr::Client;
 use crate::{Env, cat, font, managed, terminals};
 
 /// Bump when the font layout changes, to rebuild installed fonts.
-const FONT_VERSION: u32 = 1;
+const FONT_VERSION: u32 = 2;
 const FONT_SIGNATURE_FILE: &str = "font-signature";
 
 /// Bring the setup up to date. Problems are reported, never fatal: the cat
@@ -32,14 +32,30 @@ pub fn ensure(env: &Env, config: &Config, client: &mut Client) -> Vec<String> {
     }
     if let Some(home) = home()
         && terminals::any_installed(&home)
-        && font_outdated(env, config)
     {
-        match install_font(env, config, None) {
+        let result = if font_outdated(env, config) {
+            install_font(env, config, None)
+        } else {
+            // The font is current, but a terminal may have been installed
+            // since: make sure every installed one maps it.
+            map_installed_font(env, &home)
+        };
+        match result {
             Ok(more) => notes.extend(more),
             Err(err) => notes.push(format!("font setup failed: {err}")),
         }
     }
     notes
+}
+
+/// Map the already-installed font in every installed terminal.
+fn map_installed_font(env: &Env, home: &Path) -> std::io::Result<Vec<String>> {
+    let Some(state) = &env.state_dir else { return Ok(Vec::new()) };
+    let text = std::fs::read_to_string(state.join(config::FONT_FRAMES_FILE)).unwrap_or_default();
+    let numbers: Vec<u32> = text.split_whitespace().filter_map(|n| n.parse().ok()).collect();
+    let [cols, rows, spin] = numbers[..] else { return Ok(Vec::new()) };
+    let glyphs = (1 + spin) * cols * rows;
+    terminals::configure(home, font::FAMILY, font::FIRST_CODEPOINT, font::FIRST_CODEPOINT + glyphs - 1)
 }
 
 /// Remove everything setup added: sidebar layout, terminal mappings, font.

@@ -10,8 +10,10 @@
 
 use std::io;
 
-/// First private-use code point; frame `n` is `FIRST_CODEPOINT + n`.
-pub const FIRST_CODEPOINT: u32 = 0xF0A00;
+/// First private-use code point; glyph `n` is `FIRST_CODEPOINT + n`. Plane 16
+/// (Supplementary Private Use Area-B): plane 15 is full of Nerd Font icons,
+/// which terminals like Ghostty bundle and would draw instead of the cat.
+pub const FIRST_CODEPOINT: u32 = 0x10_0000;
 pub const FAMILY: &str = "OIIA Cat";
 
 /// Glyph bitmap size: about the shape of one terminal cell, so a terminal

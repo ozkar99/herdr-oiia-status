@@ -157,7 +157,14 @@ pub fn font_poses(state_dir: Option<&Path>) -> Option<Poses> {
     let block = |key: u32| -> Option<String> {
         let first = crate::font::FIRST_CODEPOINT + key * cols * rows;
         let lines: Option<Vec<String>> = (0..rows)
-            .map(|row| (0..cols).map(|col| char::from_u32(first + row * cols + col)).collect())
+            .map(|row| {
+                // Herdr indents an entry's first row by 1 cell and later rows by
+                // 3, so pad the first row to keep the cat's rows aligned. U+2800
+                // is blank but, unlike a space, survives herdr's trimming.
+                let pad = if row == 0 && rows > 1 { "\u{2800}\u{2800}" } else { "" };
+                let cells: Option<String> = (0..cols).map(|col| char::from_u32(first + row * cols + col)).collect();
+                cells.map(|cells| format!("{pad}{cells}"))
+            })
             .collect();
         lines.map(|lines| lines.join("\n"))
     };
