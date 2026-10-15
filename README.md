@@ -10,10 +10,9 @@ sound while it spins.
 
 > [!WARNING]
 > **This plugin was completely vibecoded.** It was written by an AI coding
-> assistant in one long chat, with a human mostly saying "make the cat
-> bigger". Read it before you run it, expect rough edges, and don't use it for
-> anything that matters. It is provided as is, without warranty of any kind;
-> see [LICENSE](LICENSE). If it breaks your terminal, that's on you.
+> assistant in one long chat, with a human directing it and testing every
+> step. Expect rough edges, and read it before you run it. It is provided as
+> is, without warranty of any kind; see [LICENSE](LICENSE).
 
 ## How it works
 
