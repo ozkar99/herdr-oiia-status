@@ -26,6 +26,9 @@ pub struct Config {
     /// `[columns, rows]`. Rows beyond the first render as `$oiia2`, `$oiia3`...
     /// Re-run `install-font` after changing it.
     pub font_grid: [u32; 2],
+    /// Put the cat in herdr's sidebar layout and install the cat font for
+    /// kitty/Ghostty automatically. Off: do both yourself (see the README).
+    pub auto_setup: bool,
     pub sound: SoundConfig,
 }
 
@@ -69,7 +72,8 @@ impl Default for Config {
             frames: Vec::new(),
             font_poses: None,
             states: StateGlyphs::default(),
-            font_grid: [2, 1],
+            font_grid: [4, 2],
+            auto_setup: true,
             sound: SoundConfig::default(),
         }
     }
@@ -146,7 +150,7 @@ pub struct Poses {
 /// The font cat's poses, if `install-font` has run. Its state file holds
 /// `cols rows` and then the spin pose count; glyph block 0 is the standing
 /// pose and blocks 1..=n the spin poses, each block `cols * rows` characters.
-fn font_poses(state_dir: Option<&Path>) -> Option<Poses> {
+pub fn font_poses(state_dir: Option<&Path>) -> Option<Poses> {
     let text = std::fs::read_to_string(state_dir?.join(FONT_FRAMES_FILE)).ok()?;
     let numbers: Vec<u32> = text.split_whitespace().filter_map(|n| n.parse().ok()).collect();
     let [cols, rows, spin_count] = numbers[..] else { return None };

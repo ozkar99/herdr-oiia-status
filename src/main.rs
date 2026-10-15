@@ -15,7 +15,9 @@ mod config;
 mod font;
 mod herdr;
 mod kitty;
+mod managed;
 mod rhythm;
+mod setup;
 mod show;
 mod sound;
 mod terminals;
@@ -49,6 +51,7 @@ fn main() -> ExitCode {
         Some("test-sound") => test_sound(&env, &config),
         Some("clear") => clear(&config),
         Some("install-font") => install_font(&env, &config, std::env::args().nth(2)),
+        Some("unconfigure") => unconfigure(&env),
         Some("pane") => pane(&env, std::env::args().nth(2)),
         Some("takes") => print_takes(&env, &config),
         Some("preview") => preview(&env, std::env::args().nth(2)),
@@ -122,7 +125,7 @@ impl Env {
     }
 }
 
-fn run(env: &Env, config: Config) -> std::io::Result<()> {
+fn run(env: &Env, mut config: Config) -> std::io::Result<()> {
     let lock_path = env
         .state_dir
         .clone()
@@ -134,6 +137,13 @@ fn run(env: &Env, config: Config) -> std::io::Result<()> {
     }
 
     let mut client = Client::from_env()?;
+    for note in setup::ensure(env, &config, &mut client) {
+        eprintln!("oiia: {note}");
+    }
+    // Setup may have just installed the font.
+    if config.font_poses.is_none() {
+        config.font_poses = config::font_poses(env.state_dir.as_deref());
+    }
     let (show, takes) = build_show(env, &config);
     let player = env.player(&config, &takes);
     let mut animator = Animator::new(&config, show, player);
@@ -629,50 +639,22 @@ mod term {
     }
 }
 
-/// Build the GIF font, install it for this user, and map its code points in
-/// kitty, which then draws the `$oiia` token as the real cat.
+/// Build and install the cat font now (setup also does this automatically).
 fn install_font(env: &Env, config: &Config, gif: Option<String>) -> std::io::Result<()> {
-    let path = gif.map(PathBuf::from).unwrap_or_else(|| env.gif());
-    let frames = cat::load(&path)?;
-    let area = cat::bounds(&frames);
-    // One glyph per terminal cell, so the terminal never has to squeeze or
-    // crop a wide picture into one character.
-    let [cols, rows] = config.font_grid.map(|n| n.clamp(1, 8) as usize);
-    let (stand, spin) = cat::poses(&frames);
-    let mut images = Vec::new();
-    for &index in std::iter::once(&stand).chain(&spin) {
-        images.extend(cat::tiles(&frames[index], area, cols, rows, font::TILE_WIDTH, font::TILE_HEIGHT));
-    }
-    let bytes = font::build(&images, font::Format::native())?;
-
-    let home = PathBuf::from(std::env::var_os("HOME").ok_or_else(|| std::io::Error::other("HOME is not set"))?);
-    let font_dir = if cfg!(target_os = "macos") {
-        home.join("Library/Fonts")
-    } else {
-        std::env::var_os("XDG_DATA_HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| home.join(".local/share"))
-            .join("fonts")
-    };
-    std::fs::create_dir_all(&font_dir)?;
-    let font_path = font_dir.join("oiia-cat.ttf");
-    std::fs::write(&font_path, bytes)?;
-    if !cfg!(target_os = "macos") {
-        let _ = std::process::Command::new("fc-cache").arg("-f").arg(&font_dir).status();
-    }
-    println!("installed {}", font_path.display());
-
-    let state_dir = env.state_dir.clone().unwrap_or_else(std::env::temp_dir);
-    std::fs::create_dir_all(&state_dir)?;
-    std::fs::write(state_dir.join(config::FONT_FRAMES_FILE), format!("{cols} {rows}\n{}\n", spin.len()))?;
-    println!("1 standing pose + {} spin poses", spin.len());
-
-    // Never signal a terminal to reload: older kitty exits on SIGUSR1.
-    let last = font::FIRST_CODEPOINT + images.len() as u32 - 1;
-    for note in terminals::configure(&home, font::FAMILY, font::FIRST_CODEPOINT, last)? {
+    for note in setup::install_font(env, config, gif.map(PathBuf::from))? {
         println!("{note}");
     }
     Ok(())
+}
+
+/// Undo everything setup did, and clear the cat from the sidebar.
+fn unconfigure(env: &Env) -> std::io::Result<()> {
+    let mut client = Client::from_env()?;
+    for note in setup::unconfigure(env, &mut client)? {
+        println!("{note}");
+    }
+    let config = Config::default();
+    clear(&config)
 }
 
 /// List the takes the sound clip splits into, with their spin speed.

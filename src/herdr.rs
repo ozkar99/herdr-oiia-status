@@ -57,6 +57,10 @@ impl Client {
         Ok(value["result"].take())
     }
 
+    pub fn reload_config(&mut self) -> io::Result<()> {
+        self.request("server.reload_config", json!({})).map(drop)
+    }
+
     pub fn agents(&mut self) -> io::Result<Vec<Agent>> {
         let mut result = self.request("agent.list", json!({}))?;
         Ok(serde_json::from_value(result["agents"].take())?)

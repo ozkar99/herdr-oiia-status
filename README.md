@@ -42,69 +42,33 @@ Requires herdr ≥ 0.9.0, Linux or macOS, and `cargo`.
 
 ```bash
 herdr plugin install ozkar99/herdr-oiia-status
-# or, from a local checkout:
-cargo build --release && herdr plugin link .
 ```
 
-### 1. Put the cat in the sidebar
+That's it. The first time the plugin runs (on the next agent status change or
+herdr start), it sets itself up:
 
-Add this to `~/.config/herdr/config.toml`, then run `herdr server reload-config`.
-It is the default layout with `state_icon` swapped for a colored `$oiia`. The
-colors shown are herdr's Dracula palette; adjust them for your theme.
+- **Sidebar:** adds a layout to herdr's `config.toml` that puts the cat where
+  the status dot was, colored to match your herdr theme, and reloads herdr.
+  If you already have your own `[ui.sidebar.agents]`, it leaves yours alone;
+  add `$oiia` (and `$oiia2` for the cat's second row) to it yourself.
+- **Sound:** the OIIA clip is bundled and plays while agents work.
+- **Real GIF cat (kitty or Ghostty):** if either terminal is installed, it
+  builds a color font from the bundled GIF, installs it (`~/.local/share/fonts`
+  on Linux, `~/Library/Fonts` on macOS) and maps it in the terminal's config.
+  Restart the terminal once to load it. Other terminals show a text cat
+  instead, automatically.
 
-```toml
-[ui.sidebar.agents]
-rows = [
-  [{ token = "$oiia", fg = "#f1fa8c", rules = [
-      { equals = "○", fg = "#50fa7b" },
-      { equals = "×", fg = "#ff5555" },
-      { equals = "✓", fg = "#8be9fd" },
-      { equals = "·", fg = "#6272a4" },
-  ] }, "machine", "workspace", "tab"],
-  ["agent"],
-]
-```
-
-### 2. Sound
-
-The OIIA clip and GIF are bundled in `assets/`, so sound works out of the box:
-
-```bash
-herdr plugin action invoke oiia.status.test-sound
-```
-
-To use your own, drop an `oiia.mp3` (or set `sound.file`) and/or an `oiia.gif`
-into `$(herdr plugin config-dir oiia.status)/`; those take priority.
-
-Sound plays through the first player found: `afplay`, `pw-play`, `paplay`,
-`ffplay`, `mpv`, `cvlc`, `play`, or `aplay`. On WSL with none of those, it plays
-through Windows' MediaPlayer via `powershell.exe`. Set `sound.player` to use
-something else.
-
-### 3. The real GIF in the sidebar (kitty or Ghostty)
-
-Build the cat font from the bundled GIF (or your own green-screen GIF in the
-config dir):
-
-```bash
-herdr plugin action invoke oiia.status.install-font
-```
-
-This builds a color font from the GIF frames (each frame cut into cell-sized
-pieces) and installs it: `~/.local/share/fonts` on Linux, `~/Library/Fonts` on
-macOS (macOS gets Apple's `sbix` bitmap format, Linux the CBDT format of Noto
-Color Emoji). It then adds a managed block to each installed terminal's config:
-`symbol_map` + `narrow_symbols` in `kitty.conf`, `font-codepoint-map` in
-Ghostty's `config`. Restart the terminal afterwards.
-
-While every attached herdr client runs inside kitty or Ghostty, `$oiia` uses
-those characters and the sidebar shows the actual cat. If any client is in
-another terminal, it falls back to the text cat automatically (checked every
-2 s).
+Everything it writes into other configs sits between
+`# BEGIN oiia.status` / `# END oiia.status` markers. To manage it all
+yourself, set `auto_setup = false` in
+`$(herdr plugin config-dir oiia.status)/config.toml`.
 
 Tested on Linux with kitty. Ghostty and macOS are implemented but untested;
-reports welcome. For a bigger cat, set `font_grid = [4, 2]`, re-run
-`install-font`, and add a `["$oiia2"]` row under the first row.
+reports welcome.
+
+To use your own media, drop an `oiia.mp3` and/or a green-screen `oiia.gif` into
+`$(herdr plugin config-dir oiia.status)/`; they take priority over the bundled
+ones (the font rebuilds automatically).
 
 To watch the full-size GIF in a popup (real pixels where the terminal supports
 Kitty graphics, colored half blocks elsewhere):
@@ -122,10 +86,7 @@ You can change the frames, fps, the glyphs for other states, and the sound mode
 ## Uninstall
 
 ```bash
-herdr plugin action invoke oiia.status.clear
-rm ~/.local/share/fonts/oiia-cat.ttf   # macOS: ~/Library/Fonts/oiia-cat.ttf
-# and delete the oiia.status block in kitty.conf / Ghostty's config
+herdr plugin action invoke oiia.status.unconfigure   # removes layout, font, mappings
 herdr plugin uninstall oiia.status   # or: herdr plugin unlink oiia.status
 ```
 
-Then put `state_icon` back in your sidebar rows.

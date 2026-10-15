@@ -13,9 +13,12 @@ fps = 20
 # herdr trims whitespace from token values. Setting this disables the font cat.
 # frames = ["ᓚᘏᗢ", "⠀ᗢ⠀", "ᗢᘏᓗ", "⠀ᘏ⠀"]
 
-# Cells the GIF font cat spans: [columns, rows]. Re-run install-font after
-# changing it; rows past the first render as $oiia2, $oiia3...
-font_grid = [2, 1]
+# Cells the GIF font cat spans: [columns, rows]. Rows past the first render
+# as $oiia2, $oiia3... The font and sidebar layout update automatically.
+font_grid = [4, 2]
+
+# Set up herdr's sidebar layout and the kitty/Ghostty font automatically.
+auto_setup = true
 
 # What the token shows for the other states (herdr's "symbols" shapes).
 # Use "" to show nothing.

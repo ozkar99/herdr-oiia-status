@@ -47,3 +47,9 @@ id = "install-font"
 title = "OIIA: install the cat font (real GIF in the sidebar, kitty/Ghostty)"
 contexts = ["workspace"]
 command = ["target/release/herdr-oiia-status", "install-font"]
+
+[[actions]]
+id = "unconfigure"
+title = "OIIA: remove the sidebar layout, font and terminal mappings"
+contexts = ["workspace"]
+command = ["target/release/herdr-oiia-status", "unconfigure"]
