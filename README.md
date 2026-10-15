@@ -60,8 +60,7 @@ Everything it writes into other configs sits between
 yourself, set `auto_setup = false` in
 `$(herdr plugin config-dir oiia.status)/config.toml`.
 
-Tested on Linux with Ghostty. macOS is implemented but not yet confirmed to
-render the font; reports welcome.
+Tested on Linux and macOS with Ghostty; reports welcome.
 
 To use your own media, drop an `oiia.mp3` and/or a green-screen `oiia.gif` into
 `$(herdr plugin config-dir oiia.status)/`; they take priority over the bundled
