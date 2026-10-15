@@ -1,6 +1,6 @@
 id = "oiia.status"
 name = "OIIA Status"
-version = "0.3.0"
+version = "0.3.1"
 min_herdr_version = "0.9.0"
 description = "Spinning OIIA cat (with sound) in the sidebar while agents work"
 platforms = ["linux", "macos"]

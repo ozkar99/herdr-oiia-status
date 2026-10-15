@@ -1,6 +1,6 @@
 [package]
 name = "herdr-oiia-status"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 rust-version = "1.89"
 description = "Herdr plugin: a spinning OIIA cat (with sound) while your agents work"

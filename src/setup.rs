@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn layout_is_valid_toml_with_theme_colors() {
-        // The default 4x2 font cat spans two sidebar rows.
+        // The default 3x2 font cat spans two sidebar rows.
         let config = Config::default();
         let herdr: toml::Table = "[theme]\nname = \"Tokyo Night\"\n[theme.custom]\nred = \"#123456\"\n".parse().unwrap();
         let text = layout(&config, &palette(&herdr));

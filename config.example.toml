@@ -15,7 +15,7 @@ fps = 20
 
 # Cells the GIF font cat spans: [columns, rows]. Rows past the first render
 # as $oiia2, $oiia3... The font and sidebar layout update automatically.
-font_grid = [4, 2]
+font_grid = [3, 2]
 
 # Set up herdr's sidebar layout and the Ghostty font automatically.
 auto_setup = true

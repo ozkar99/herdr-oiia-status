@@ -60,7 +60,7 @@ impl Default for Config {
             frames: Vec::new(),
             font_poses: None,
             states: StateGlyphs::default(),
-            font_grid: [4, 2],
+            font_grid: [3, 2],
             auto_setup: true,
             sound: SoundConfig::default(),
         }
