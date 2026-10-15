@@ -1,0 +1,49 @@
+id = "oiia.status"
+name = "OIIA Status"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Spinning OIIA cat (with sound) in the sidebar while agents work"
+platforms = ["linux", "macos"]
+
+[[build]]
+command = ["cargo", "build", "--release", "--locked"]
+
+# Catch agents that are already working when the server starts.
+[[startup]]
+command = ["target/release/herdr-oiia-status", "run"]
+
+# Every status change pokes the animator. Only one instance runs at a time
+# (it holds a lock in HERDR_PLUGIN_STATE_DIR); extra invocations exit at once.
+[[events]]
+on = "pane.agent_status_changed"
+command = ["target/release/herdr-oiia-status", "run"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["target/release/herdr-oiia-status", "run"]
+
+[[actions]]
+id = "test-sound"
+title = "OIIA: play sound"
+contexts = ["workspace"]
+command = ["target/release/herdr-oiia-status", "test-sound"]
+
+[[actions]]
+id = "clear"
+title = "OIIA: clear sidebar tokens"
+contexts = ["workspace"]
+command = ["target/release/herdr-oiia-status", "clear"]
+
+[[panes]]
+id = "cat"
+title = "OIIA cat"
+placement = "popup"
+width = "60%"
+height = "80%"
+command = ["target/release/herdr-oiia-status", "pane"]
+
+[[actions]]
+id = "install-font"
+title = "OIIA: install the cat font (real GIF in the sidebar, kitty/Ghostty)"
+contexts = ["workspace"]
+command = ["target/release/herdr-oiia-status", "install-font"]

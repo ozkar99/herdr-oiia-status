@@ -1,0 +1,37 @@
+# Copy to the plugin config dir:
+#   cp config.example.toml "$(herdr plugin config-dir oiia.status)/config.toml"
+# Every key is optional.
+
+# Rendered as `$oiia` in [ui.sidebar.agents] rows.
+token = "oiia"
+
+# Animation speed.
+fps = 20
+
+# Text cat, used when the GIF font is not installed or a client is outside
+# kitty. Keep frames the same width; pad with "⠀" (U+2800), not spaces, because
+# herdr trims whitespace from token values. Setting this disables the font cat.
+# frames = ["ᓚᘏᗢ", "⠀ᗢ⠀", "ᗢᘏᓗ", "⠀ᘏ⠀"]
+
+# Cells the GIF font cat spans: [columns, rows]. Re-run install-font after
+# changing it; rows past the first render as $oiia2, $oiia3...
+font_grid = [2, 1]
+
+# What the token shows for the other states (herdr's "symbols" shapes).
+# Use "" to show nothing.
+[states]
+idle = "○"
+blocked = "×"
+done = "✓"
+unknown = "·"
+
+[sound]
+# "once" = play the first take each time an agent starts working
+# "loop" = a new random take after every pause, for as long as any agent works
+# "off"
+mode = "once"
+# Relative paths are looked up in this config dir, then the plugin's sounds/ dir.
+file = "oiia.mp3"
+# Custom player; "{file}" becomes the audio path. Empty = auto-detect
+# (afplay, pw-play, paplay, ffplay, mpv, cvlc, play, aplay, then PowerShell on WSL).
+player = []

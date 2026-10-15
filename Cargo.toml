@@ -1,0 +1,20 @@
+[package]
+name = "herdr-oiia-status"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+description = "Herdr plugin: a spinning OIIA cat (with sound) while your agents work"
+license = "MIT"
+
+[dependencies]
+gif = "0.14.2"
+libc = "0.2.190"
+png = "0.18.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+symphonia = { version = "0.5", default-features = false, features = ["mp3", "wav", "ogg", "vorbis", "pcm"] }
+toml = "1"
+
+[profile.release]
+opt-level = 3
+strip = true
