@@ -135,9 +135,19 @@ pub fn build(frames: &[Image], format: Format) -> io::Result<Vec<u8>> {
     hhea.extend(be_i(&[0, 0, advance as i16, 1, 0, 0, 0, 0, 0, 0, 0]));
     hhea.extend(be(&[num_glyphs]));
 
-    let mut hmtx = Vec::new();
-    for _ in 0..num_glyphs {
-        hmtx.extend(be(&[advance, 0]));
+    // Each glyph's box in font units: its bitmap, centered, from the descent up.
+    let rects: Vec<[i16; 4]> = frames
+        .iter()
+        .map(|frame| {
+            let x_min = to_units(((max_w as usize - frame.width) / 2) as u8);
+            let x_max = x_min + to_units(frame.width as u8);
+            [x_min, descent, x_max, descent + to_units(frame.height as u8)]
+        })
+        .collect();
+
+    let mut hmtx = be(&[advance, 0]); // glyph 0
+    for rect in &rects {
+        hmtx.extend(be(&[advance, rect[0] as u16]));
     }
 
     // maxp 0.5 suffices for a bitmap-only font; with outlines it must be 1.0.
@@ -149,7 +159,8 @@ pub fn build(frames: &[Image], format: Format) -> io::Result<Vec<u8>> {
     .to_vec();
     maxp.extend(be(&[num_glyphs]));
     if format == Format::Sbix {
-        maxp.extend(be(&[0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0]));
+        // maxPoints 4 and maxContours 1: one rectangle per glyph.
+        maxp.extend(be(&[4, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0]));
     }
 
     let mut os2 = be(&[4u16]);
@@ -184,11 +195,11 @@ pub fn build(frames: &[Image], format: Format) -> io::Result<Vec<u8>> {
             tables.push((b"CBLC", cblc));
         }
         Format::Sbix => {
-            let sbix = sbix_table(&pngs, frames, max_w, descent_px);
+            let sbix = sbix_table(&pngs);
             tables.push((b"sbix", sbix));
-            // CoreText wants outlines to exist; every glyph's is empty.
-            tables.push((b"glyf", vec![0; 4]));
-            tables.push((b"loca", vec![0; 2 * (usize::from(num_glyphs) + 1)]));
+            let (glyf, loca) = outline_tables(&rects);
+            tables.push((b"glyf", glyf));
+            tables.push((b"loca", loca));
         }
     }
     // The table directory must be sorted by tag.
@@ -196,9 +207,28 @@ pub fn build(frames: &[Image], format: Format) -> io::Result<Vec<u8>> {
     Ok(assemble(tables))
 }
 
+/// `glyf` and short `loca` for the sbix font: glyph 0 is empty, every other
+/// glyph an invisible rectangle over its bitmap. CoreText measures sbix glyphs
+/// by their outlines (sbix flag bit 1 is off, so these are never drawn);
+/// without them every glyph measures 0x0 and Ghostty on macOS draws nothing.
+fn outline_tables(rects: &[[i16; 4]]) -> (Vec<u8>, Vec<u8>) {
+    let mut glyf = Vec::new();
+    let mut loca = be(&[0, 0]); // glyph 0 starts and ends at 0
+    for &[x_min, y_min, x_max, y_max] in rects {
+        glyf.extend(be_i(&[1, x_min, y_min, x_max, y_max])); // one contour + bbox
+        glyf.extend(be(&[3, 0])); // last point index, no instructions
+        glyf.extend([0x01; 4]); // on-curve points with 16-bit deltas
+        glyf.extend(be_i(&[x_min, 0, x_max - x_min, 0]));
+        glyf.extend(be_i(&[y_min, y_max - y_min, 0, y_min - y_max]));
+        loca.extend(be(&[(glyf.len() / 2) as u16]));
+    }
+    (glyf, loca)
+}
+
 /// `sbix` with one strike at PPEM: per glyph an origin offset, a `png ` tag
-/// and the PNG. Glyph 0 (.notdef) has no image.
-fn sbix_table(pngs: &[Vec<u8>], frames: &[Image], max_w: u8, descent_px: u8) -> Vec<u8> {
+/// and the PNG. Glyph 0 (.notdef) has no image. CoreText places each image at
+/// its outline's bottom-left corner plus the offset, so the offset is zero.
+fn sbix_table(pngs: &[Vec<u8>]) -> Vec<u8> {
     let num_glyphs = pngs.len() + 1;
     let mut table = be(&[1, 1]); // version 1, flags: bit 0 must be set
     table.extend(1u32.to_be_bytes()); // numStrikes
@@ -207,9 +237,8 @@ fn sbix_table(pngs: &[Vec<u8>], frames: &[Image], max_w: u8, descent_px: u8) -> 
     let header = 4 + 4 * (num_glyphs + 1);
     let mut data = Vec::new();
     let mut offsets = vec![header as u32, header as u32]; // glyph 0 is empty
-    for (png, frame) in pngs.iter().zip(frames) {
-        data.extend((((usize::from(max_w) - frame.width) / 2) as i16).to_be_bytes());
-        data.extend((-(i16::from(descent_px))).to_be_bytes());
+    for png in pngs {
+        data.extend(be_i(&[0, 0])); // originOffsetX, originOffsetY
         data.extend_from_slice(b"png ");
         data.extend_from_slice(png);
         offsets.push((header + data.len()) as u32);
@@ -319,5 +348,23 @@ mod tests {
                 std::fs::write(std::path::Path::new(&dir).join(name), &font).unwrap();
             }
         }
+    }
+
+    #[test]
+    fn sbix_glyphs_have_the_bitmap_as_bounds() {
+        // CoreText measures sbix glyphs by their outlines; an empty one is 0x0
+        // and Ghostty on macOS then draws nothing.
+        let image = Image { width: TILE_WIDTH, height: TILE_HEIGHT, rgba: vec![200; TILE_WIDTH * TILE_HEIGHT * 4] };
+        let font = build(&[image], Format::Sbix).unwrap();
+        let at = tags(&font).iter().position(|tag| tag == b"glyf").unwrap();
+        let entry = &font[12 + 16 * at..28 + 16 * at];
+        let offset = u32::from_be_bytes(entry[8..12].try_into().unwrap()) as usize;
+        let bbox: Vec<i16> = font[offset + 2..offset + 10]
+            .chunks(2)
+            .map(|pair| i16::from_be_bytes([pair[0], pair[1]]))
+            .collect();
+        let [x_min, y_min, x_max, y_max] = bbox[..] else { unreachable!() };
+        assert!(x_max > x_min && y_max > y_min, "glyph 1 bbox {bbox:?} must not be empty");
+        assert!(y_min < 0, "the bitmap reaches below the baseline");
     }
 }

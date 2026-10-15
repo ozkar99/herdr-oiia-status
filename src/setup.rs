@@ -10,7 +10,7 @@ use crate::herdr::Client;
 use crate::{Env, cat, font, managed, terminals};
 
 /// Bump when the font layout changes, to rebuild installed fonts.
-const FONT_VERSION: u32 = 2;
+const FONT_VERSION: u32 = 3;
 const FONT_SIGNATURE_FILE: &str = "font-signature";
 
 /// Bring the setup up to date. Problems are reported, never fatal: the cat
