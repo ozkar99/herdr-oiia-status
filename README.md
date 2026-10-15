@@ -4,9 +4,7 @@ A [herdr](https://github.com/herdrdev/herdr) plugin that replaces the yellow
 "working" dot in the agent sidebar with a spinning OIIA cat, and plays the
 sound while it spins.
 
-```
-ᓚᘏᗢ · my-project · main      →      ⠀ᗢ⠀ · my-project · main      →      ᗢᘏᓗ · …
-```
+https://github.com/user-attachments/assets/9b389b12-b8e7-45f4-932a-65f15f997607
 
 > [!WARNING]
 > **This plugin was completely vibecoded.** It was written by an AI coding
